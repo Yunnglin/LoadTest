@@ -13,9 +13,10 @@ var (
 )
 
 func init() {
-	errFile, err := os.OpenFile("errors.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	errFilePath := "errors.log"
+	errFile, err := os.OpenFile(errFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
-		log.Fatalln("打开日志文件失败：", err)
+		log.Fatalf("Failed in opening the %s：\n", errFilePath+err.Error())
 	}
 
 	Info = log.New(os.Stdout, "Info:", log.Ldate|log.Ltime|log.Lshortfile)

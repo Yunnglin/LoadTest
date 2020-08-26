@@ -8,9 +8,9 @@ import (
 )
 
 type LoopTask struct {
-	// C is the concurrency level, the number of concurrent workers
+	// Workers is the concurrency level, the number of concurrent workers
 	// to run.
-	C int
+	Workers int
 
 	// StartTime the time when start task
 	StartTime time.Time
@@ -44,7 +44,7 @@ func (l *LoopTask) Stop() {
 	for !l.isStop {
 		worker := l.q.Pop()
 		if worker != nil {
-			worker.(interfaces.Work).Close(l)
+			worker.(interfaces.Work).Close()
 		} else {
 			l.isStop = true
 		}
@@ -56,13 +56,13 @@ func (l *LoopTask) Wait() {
 }
 
 func (l *LoopTask) runWorkers(manager interfaces.WorkManager) {
-	l.wg.Add(l.C)
-	for i := 0; i < l.C; i++ {
+	l.wg.Add(l.Workers)
+	for i := 0; i < l.Workers; i++ {
 		work := manager.CreateWork()
 		l.q.Push(work)
 		go func() {
-			work.Init(l)
-			work.RunWorker(l)
+			work.Init()
+			work.RunWorker()
 			l.wg.Done()
 		}()
 	}
