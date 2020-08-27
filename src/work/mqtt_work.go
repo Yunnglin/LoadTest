@@ -2,6 +2,7 @@ package work
 
 import (
 	"LoadTest/src/util/log"
+	"LoadTest/src/util/result"
 	"fmt"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"sync"
@@ -50,6 +51,7 @@ func (m *MqttWork) Request(topic string, body []byte) (MQTT.Message, error) {
 // RequestNR request without a result
 func (m *MqttWork) RequestNR(topic string, qos byte, retained bool, message string) {
 	m.GetClient().Publish(topic, qos, retained, message)
+	result.AddPublishing(1)
 }
 
 func (m *MqttWork) On(topic string, f func(client MQTT.Client, msg MQTT.Message)) {

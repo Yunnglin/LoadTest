@@ -2,6 +2,7 @@ package mqtt_task
 
 import (
 	"LoadTest/src/util/log"
+	"LoadTest/src/util/result"
 	"LoadTest/src/work"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"strings"
@@ -56,9 +57,11 @@ func NewWorker(manager *Manager, opts *MQTT.ClientOptions) *Worker {
 	worker.mqttWork = new(work.MqttWork)
 
 	opts.SetConnectionLostHandler(func(client MQTT.Client, err error) {
+		result.AddConnection(-1)
 		log.Error.Println("Connection Lost!", err.Error())
 	})
 	opts.SetOnConnectHandler(func(client MQTT.Client) {
+		result.AddConnection(1)
 		log.Info.Println("Connected!")
 	})
 	opts.SetTLSConfig(manager.Cert())
