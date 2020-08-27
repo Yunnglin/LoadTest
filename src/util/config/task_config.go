@@ -12,32 +12,45 @@ var (
 	once sync.Once
 )
 
-type worker struct {
+type Worker struct {
 	Workers     int
 	QPS         int  `toml:"quest_per_second"`
 	OnlyConnect bool `toml:"only_connect"`
-	CPS         int  `toml:"connection_per_second"`
+	//CPS         int  `toml:"connection_per_second"`
 }
 
-type request struct {
+type Request struct {
 	Topic    string
 	Qos      byte
 	Retained bool
 	Message  string
 }
 
-type server struct {
-	Servers      []string
+type Server struct {
+	Broker       string
 	ClientId     string
 	Username     string
 	Password     string
 	CleanSession bool `toml:"clean_session"`
 }
 
+type Device struct {
+	DeviceName string `toml:"device_name"`
+	DeviceId   []int  `toml:"device_id"`
+	ProjectId  string `toml:"project_id"`
+	HubId      string `toml:"hub_id"`
+	Secret     string
+}
+
+type Task struct {
+	Device  Device
+	Worker  Worker
+	Server  Server
+	Request Request
+}
+
 type taskConfig struct {
-	Worker  worker
-	Server  server
-	Request request
+	Tasks []*Task
 }
 
 func LoadConfig(path string) *taskConfig {
@@ -51,6 +64,7 @@ func LoadConfig(path string) *taskConfig {
 		if _, err := toml.DecodeFile(filePath, &cfg); err != nil {
 			panic(err)
 		}
+
 	})
 	return cfg
 }

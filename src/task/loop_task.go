@@ -2,15 +2,15 @@ package task
 
 import (
 	"LoadTest/src/interfaces"
+	"LoadTest/src/util/log"
 	"LoadTest/src/util/queue"
+	"strconv"
 	"sync"
 	"time"
 )
 
 type LoopTask struct {
-	// Workers is the concurrency level, the number of concurrent workers
-	// to run.
-	Workers int
+	Manager interfaces.WorkManager
 
 	// StartTime the time when start task
 	StartTime time.Time
@@ -21,9 +21,6 @@ type LoopTask struct {
 	//wg
 	wg sync.WaitGroup
 
-	//UserData
-	UserData interface{}
-
 	//IsStop
 	isStop bool
 }
@@ -32,11 +29,11 @@ func (l *LoopTask) IsStop() bool {
 	return l.isStop
 }
 
-func (l *LoopTask) Run(manager interfaces.WorkManager) {
+func (l *LoopTask) Run() {
 	l.StartTime = time.Now()
 	l.q = queue.NewQueue()
 	l.isStop = false
-	l.runWorkers(manager)
+	l.runWorkers()
 
 }
 
@@ -55,14 +52,23 @@ func (l *LoopTask) Wait() {
 	l.wg.Wait()
 }
 
-func (l *LoopTask) runWorkers(manager interfaces.WorkManager) {
-	l.wg.Add(l.Workers)
-	for i := 0; i < l.Workers; i++ {
-		work := manager.CreateWork()
-		l.q.Push(work)
+func (l *LoopTask) runWorkers() {
+	workers := l.Manager.GetTask().Worker.Workers
+	startId := l.Manager.GetTask().Device.DeviceId[0]
+	endId := l.Manager.GetTask().Device.DeviceId[1]
+
+	l.wg.Add(workers)
+
+	for i := 0; i < workers; i++ {
+		if startId+i > endId {
+			log.Warning.Println("Worker numbers exceed device id numbers")
+			continue
+		}
+		worker := l.Manager.CreateWorker(strconv.Itoa(startId + i))
+		l.q.Push(worker)
 		go func() {
-			work.Init()
-			work.RunWorker()
+			worker.Init()
+			worker.RunWorker()
 			l.wg.Done()
 		}()
 	}

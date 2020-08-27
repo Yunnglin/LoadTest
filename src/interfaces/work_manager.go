@@ -1,6 +1,9 @@
 package interfaces
 
+import "LoadTest/src/util/config"
+
 type WorkManager interface {
-	CreateWork() Work
+	CreateWorker(workerId string) Work
 	Finish(task Task)
+	GetTask() *config.Task
 }

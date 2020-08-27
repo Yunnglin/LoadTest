@@ -1,15 +1,11 @@
 package mqtt_task
 
 import (
-	"LoadTest/src/util/config"
 	"LoadTest/src/util/log"
 	"LoadTest/src/work"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
+	"strings"
 	"time"
-)
-
-var(
-	clientId int
 )
 
 type Worker struct {
@@ -17,11 +13,12 @@ type Worker struct {
 	manager  *Manager
 	// requests per second
 	QPS         int
+	ConnectOnly bool
 	closeSignal bool
+	deviceId    string
 }
 
 func (w *Worker) Init() {
-	w.QPS = config.GetConfig().Worker.QPS
 	w.closeSignal = false
 }
 
@@ -44,24 +41,20 @@ func (w *Worker) Close() {
 }
 
 func (w *Worker) work() {
-	if config.GetConfig().Worker.OnlyConnect{
-		w.mqttWork.Finish()
-		_ = w.mqttWork.GetClient().Connect()
-	}else{
-		request := config.GetConfig().Request
+	if !w.ConnectOnly {
+		request := w.manager.GetTask().Request
+		request.Topic = strings.Replace(request.Topic, "{device_id}", w.deviceId, 1)
 		w.mqttWork.RequestNR(request.Topic, request.Qos, request.Retained, request.Message)
 	}
 
 }
 
-func NewWorker(manager *Manager) *Worker {
-	clientId += 1
+func NewWorker(manager *Manager, opts *MQTT.ClientOptions) *Worker {
+
 	worker := new(Worker)
 	worker.manager = manager
 	worker.mqttWork = new(work.MqttWork)
 
-	opts := worker.mqttWork.GetDefaultOptions()
-	opts.SetClientID(string(rune(clientId)))
 	opts.SetConnectionLostHandler(func(client MQTT.Client, err error) {
 		log.Error.Println("Connection Lost!", err.Error())
 	})
@@ -69,7 +62,6 @@ func NewWorker(manager *Manager) *Worker {
 		log.Info.Println("Connected!")
 	})
 	opts.SetTLSConfig(manager.Cert())
-
 	err := worker.mqttWork.Connect(opts)
 	if err != nil {
 		log.Error.Println(err.Error())

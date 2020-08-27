@@ -1,7 +1,7 @@
 package interfaces
 
 type Task interface {
-	Run(manager WorkManager)
+	Run()
 	Stop()
 	Wait()
 }
